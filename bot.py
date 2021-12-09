@@ -9,6 +9,7 @@ import DiscordUtils
 
 # Load env file
 load_dotenv()
+api_url = os.getenv('API_URL')
 
 # Instantiating the bot with a prefix
 client = commands.Bot(command_prefix='rc', help_command=None, case_insensitive=True, strip_after_prefix=True, intents=discord.Intents.all()) 
@@ -37,7 +38,7 @@ async def post_rec(ctx, rec_type:str):
         
         usr_input = await client.wait_for("message", check=check, timeout=60)
 
-        post_req = requests.post(f'http://localhost:8000/postrec/?rec_name={usr_input.content}&author={author}&rec_type={rec_type}')
+        post_req = requests.post(f'{api_url}/postrec/?rec_name={usr_input.content}&author={author}&rec_type={rec_type}')
         if post_req.status_code == 200: #checking if post request went alright
             await ctx.send('Your recommendation has been successfully added, trash taste btw')
         else:
@@ -50,7 +51,7 @@ async def post_rec(ctx, rec_type:str):
 
 # Get recommendations list
 def all_embeds(page:int, total_pages):
-    response = requests.get(f'http://localhost:8000/getrec/{page}').json()
+    response = requests.get(f'{api_url}/getrec/{page}').json()
     fetched_recs = response['rec_list']
     embed = discord.Embed(title="Akatsuki recommended", description="For when you can't find stuff to do", color=0xFF5733)
     for rec in fetched_recs:
@@ -69,7 +70,7 @@ time added: {date_time.hour}:{date_time.minute}```
 async def all_recs(ctx):
     await ctx.send('Fetching all available reccomendations, may take a while')
 
-    total_pages = requests.get('http://localhost:8000/total_rec_pages').json()
+    total_pages = requests.get('{api_url}/total_rec_pages').json()
 
     paginator = DiscordUtils.Pagination.CustomEmbedPaginator(ctx, timeout=30)
     paginator.add_reaction('⏮️', "first")
@@ -85,7 +86,7 @@ async def all_recs(ctx):
 
 # Filter recs by author/rec_type
 def filtered_embeds(choice:str, usr_input:str, page:int, total_pages):
-    response = requests.get(f'http://localhost:8000/recsfilter/{choice}/{usr_input}/{page}').json()
+    response = requests.get(f'{api_url}/recsfilter/{choice}/{usr_input}/{page}').json()
     fetched_recs = response['rec_list']
     embed = discord.Embed(title="Akatsuki recommended", description="For when you can't find stuff to do", color=0xFF5733)
     for rec in fetched_recs:
@@ -111,7 +112,7 @@ async def filter_recs(ctx, choice: str):
         usr_input = await client.wait_for("message", check=check, timeout=60)
 
         # have to fetch atleast 1 page to get the total page size for the query
-        filter_query = requests.get(f'http://localhost:8000/recsfilter/{choice}/{usr_input.content}/1')
+        filter_query = requests.get(f'{api_url}/recsfilter/{choice}/{usr_input.content}/1')
         if filter_query.status_code == 200:
 
             total_pages = filter_query.json()['total_pages']
